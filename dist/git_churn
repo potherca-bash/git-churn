@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+
+set -o errexit -o errtrace -o nounset -o pipefail
+
+git_churn() {
+
+    file_line_count() {
+        # shellcheck disable=SC2002
+        cat "${1?One parameter required: <file-path>}" | wc -l
+    }
+
+    file_size() {
+        du -b "${1?One parameter required: <file-path>}" | cut -f1
+    }
+
+    git_file_changes() {
+        local sFile sRepoPath
+
+        readonly sRepoPath=${1?Two parameters required: <repo-path> <file>}
+        readonly sFile=${2?Two parameters required: <repo-path> <file>}
+
+        git -C "${sRepoPath}" log --numstat --oneline -- "${sFile}" |
+            grep -E "[0-9-]+\s[0-9-]+\s${sFile}" |
+            cut -f1,2 |
+            awk '{inserted+=$1;deleted+=$2} END{print inserted" " deleted;}'
+    }
+
+    git_file_commits() {
+        local sFile sRepoPath
+
+        readonly sRepoPath="${1?Two parameters required: <repo-path> <file>}"
+        readonly sFile="${2?Two parameters required: <repo-path> <file>}"
+
+        git -C "${sRepoPath}" log --oneline -- "${sFile}" | wc -l
+    }
+
+    git_file_contributors() {
+        local sContributors sFile sRepoPath
+
+        readonly sRepoPath="${1?Two parameters required: <repo-path> <file>}"
+        readonly sFile="${2?Two parameters required: <repo-path> <file>}"
+
+        # @FIXME: For some unknown reason, when `git_churn` is called with a pipe, output here is empty!
+        #         The `git shortlog` call might need to be replaced with a `git log` call to fix this...
+        readonly sContributors="$(
+            git -C "${sRepoPath}" shortlog -ens -- "${sFile}" |
+                sed --regexp-extended 's/^\s+([0-9]+)\s([^<]+) <([^>]+)>/{"commits":"\1","email":"\3","name":"\2"}/g' |
+                tr "\n" ','
+        )"
+
+        # Remove trailing comma
+        echo "${sContributors%?}"
+    }
+
+    # shellcheck disable=SC2039
+    local -a aParameters=()
+    local sArgument
+
+    # /dev/stdin is a symlink to /proc/self/fd/0 but more readable
+    if [ -p /dev/stdin ]; then
+        # Input was piped in, read pipe
+        while read -r sArgument; do
+            aParameters+=("${sArgument}")
+        done </dev/stdin
+    fi
+
+    if [ "$*" != '' ]; then
+        for sArgument in "$@"; do
+            aParameters+=("${sArgument}")
+        done
+    fi
+
+    local sChanges sFilePath sFileList sRepoPath sTemporaryDirectory
+
+    sRepoPath="${aParameters[0]?One parameter required: <path-to-repository>}"
+
+    if echo "${sRepoPath}" | grep -qE '^([a-z]+s?://)|(\w+@[^.]+\.[^./:]+:)'; then
+        readonly sTemporaryDirectory="$(mktemp -d)"
+
+        trap "{ rm -rdf ""${sTemporaryDirectory}""; }" SIGINT SIGTERM ERR EXIT
+
+        git clone --depth 1 --no-tags --quiet "${sRepoPath}" "${sTemporaryDirectory}"
+
+        sRepoPath="${sTemporaryDirectory}"
+    fi
+
+    readonly sFileList="$(git -C "${sRepoPath}" ls-tree -r --name-only HEAD)"
+
+    echo '['
+
+    for sFile in ${sFileList}; do
+        sFilePath="${sRepoPath}/${sFile}"
+
+        sChanges="$(git_file_changes "${sRepoPath}" "${sFile}")"
+
+        # Modifying a line is represented as 1 insertion and 1 deletion
+        printf '  {"file":"%s", "size":"%s", "lines":"%s", "commits":%s, "inserted":%s, "deleted":%s, "contributors":[%s]},\n' \
+            "${sFile}" \
+            "$(file_size "${sFilePath}")" \
+            "$(file_line_count "${sFilePath}")" \
+            "$(git_file_commits "${sRepoPath}" "${sFile}")" \
+            "${sChanges%% *}" \
+            "${sChanges#* }" \
+            "$(git_file_contributors "${sRepoPath}" "${sFile}")"
+    done
+
+    echo ']'
+}
+
+if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
+    export -f git_churn
+else
+    git_churn "${@-}"
+    exit ${?}
+fi
