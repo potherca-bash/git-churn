@@ -8,7 +8,7 @@ The advised installation method is using the [`bpkg` package manager][bpkg], as
 this will allow versioning to be used:
 
 ```sh
-bpkg install potherca-bash/git-churn@v0.1.0
+bpkg install potherca-bash/git-churn@v0.2.0
 ```
 
 Alternatively, the latest version of this project's main script can be
@@ -44,7 +44,7 @@ It will output something like:
   {"file":"src/function.git_file_changes.sh", "size":"424", "lines":"13", "commits":1, "inserted":13, "deleted":0, "contributors":[{"commits":"1","email":"potherca@gmail.com","name":"Ben Peachey"}]},
   {"file":"src/function.git_file_commits.sh", "size":"278", "lines":"10", "commits":1, "inserted":10, "deleted":0, "contributors":[{"commits":"1","email":"potherca@gmail.com","name":"Ben Peachey"}]},
   {"file":"src/function.git_file_contributors.sh", "size":"721", "lines":"18", "commits":1, "inserted":18, "deleted":0, "contributors":[{"commits":"1","email":"potherca@gmail.com","name":"Ben Peachey"}]},
-  {"file":"src/include.parameters.sh", "size":"449", "lines":"17", "commits":1, "inserted":17, "deleted":0, "contributors":[{"commits":"1","email":"potherca@gmail.com","name":"Ben Peachey"}]},
+  {"file":"src/include.parameters.sh", "size":"449", "lines":"17", "commits":1, "inserted":17, "deleted":0, "contributors":[{"commits":"1","email":"potherca@gmail.com","name":"Ben Peachey"}]}
 ]
 ```
 
