@@ -11,7 +11,7 @@ git_churn() {
 
     source './src/include.parameters.sh'
 
-    local sChanges sFilePath sFileList sRepoPath sTemporaryDirectory
+    local sChanges sFilePath sFileList sLastFile sRepoPath sTemporaryDirectory
 
     sRepoPath="${aParameters[0]?One parameter required: <path-to-repository>}"
 
@@ -27,7 +27,9 @@ git_churn() {
 
     readonly sFileList="$(git -C "${sRepoPath}" ls-tree -r --name-only HEAD)"
 
-    echo '['
+    readonly sLastFile="$(echo "${sFileList}" | tail -n1)"
+
+    echo -n '['
 
     for sFile in ${sFileList}; do
         sFilePath="${sRepoPath}/${sFile}"
@@ -35,7 +37,7 @@ git_churn() {
         sChanges="$(git_file_changes "${sRepoPath}" "${sFile}")"
 
         # Modifying a line is represented as 1 insertion and 1 deletion
-        printf '  {"file":"%s", "size":"%s", "lines":"%s", "commits":%s, "inserted":%s, "deleted":%s, "contributors":[%s]},\n' \
+        printf '\n  {"file":"%s", "size":"%s", "lines":"%s", "commits":%s, "inserted":%s, "deleted":%s, "contributors":[%s]}' \
           "${sFile}"\
           "$(file_size "${sFilePath}")"\
           "$(file_line_count "${sFilePath}")" \
@@ -43,9 +45,13 @@ git_churn() {
           "${sChanges%% *}" \
           "${sChanges#* }" \
           "$(git_file_contributors "${sRepoPath}" "${sFile}")"
+
+          if [[ "${sFile}" != "${sLastFile}" ]]; then
+              echo -n ','
+          fi
     done
 
-    echo ']'
+    echo -e '\n]'
 }
 
 if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
