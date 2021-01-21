@@ -9,13 +9,11 @@ git_churn() {
     source './src/function.git_file_commits.sh'
     source './src/function.git_file_contributors.sh'
 
-    # @TODO: Support pipes
+    source './src/include.parameters.sh'
 
     local sChanges sFilePath sFileList sRepoPath
 
-    readonly sRepoPath="${1?One parameter required: <path-to-repository>}"
-
-    # @TODO: Support remote repositories
+    sRepoPath="${aParameters[0]?One parameter required: <path-to-repository>}"
 
     readonly sFileList="$(git -C "${sRepoPath}" ls-tree -r --name-only HEAD)"
 
