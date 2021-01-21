@@ -1,0 +1,25 @@
+{
+  "name": "git-churn",
+  "author": "Ben Peachey <potherca@gmail.com>",
+  "dependencies": {
+    "potherca-bash/includes": "v0.1.0"
+  },
+  "dev-dependencies": {
+    "koalaman/shellcheck": "v0.7.1",
+    "mvdan/sh": "v3.2.1",
+    "potherca-bash/inline-source": "v0.1.0"
+  },
+  "description": "JSON representation of the churn for a given git repository",
+  "files": [
+    "LICENSE",
+    "README.md"
+  ],
+  "global": "true",
+  "homepage": "https://github.com/potherca-bash/git_churn",
+  "install": "install -b dist/git_churn ${PREFIX:-/usr/local}/bin/git_churn && chmod +x ${PREFIX:-/usr/local}/bin/git-churn",
+  "license": "MPL-2.0",
+  "scripts": [
+    "dist/git_churn"
+  ],
+  "version": "0.1.0"
+}
