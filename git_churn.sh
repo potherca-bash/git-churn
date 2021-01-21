@@ -11,9 +11,19 @@ git_churn() {
 
     source './src/include.parameters.sh'
 
-    local sChanges sFilePath sFileList sRepoPath
+    local sChanges sFilePath sFileList sRepoPath sTemporaryDirectory
 
     sRepoPath="${aParameters[0]?One parameter required: <path-to-repository>}"
+
+    if echo "${sRepoPath}" | grep -qE '^([a-z]+s?://)|(\w+@[^.]+\.[^./:]+:)'; then
+        readonly sTemporaryDirectory="$(mktemp -d)"
+
+        trap "{ rm -rdf ""${sTemporaryDirectory}""; }" SIGINT SIGTERM ERR EXIT
+
+        git clone --depth 1 --no-tags --quiet "${sRepoPath}" "${sTemporaryDirectory}"
+
+        sRepoPath="${sTemporaryDirectory}"
+    fi
 
     readonly sFileList="$(git -C "${sRepoPath}" ls-tree -r --name-only HEAD)"
 
